@@ -7,7 +7,9 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.ram = [0] * 256
+        self.reg = [0] * 8
+        self.pc = 0
 
     def load(self):
         """Load a program into memory."""
@@ -18,11 +20,11 @@ class CPU:
 
         program = [
             # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
+            0b10000010, # LDI R0,8  load 'immediate'; next value is the register number, subsequent number is the value to add to that register
+            0b00000000, # register number
+            0b00001000, # value to store in register
+            0b01000111, # PRN R0 print value from register
+            0b00000000, # register number
             0b00000001, # HLT
         ]
 
@@ -60,6 +62,45 @@ class CPU:
 
         print()
 
+    # MAR = memory address register, contains the address that is being read or written to
+    # MDR = memory data register, contains the data that was read or the data to write
+
+    def ram_read(self, mar):
+        return self.ram[mar]
+
+    def ram_write(self, mar, mdr):
+        self.ram[mar] = mdr
+        return self.ram[mar]
+
+    def ldi(self, mar, mdr):
+        self.reg[mar] = mdr
+
+    def prn(self, mar):
+        print(self.reg[mar])
+
     def run(self):
         """Run the CPU."""
-        pass
+        running = True
+
+        while running:
+            ir = self.ram_read(self.pc)
+
+            if ir == 130:
+                operand_a = self.ram_read(self.pc + 1)
+                operand_b = self.ram_read(self.pc + 2)
+                self.ldi(operand_a, operand_b)
+                self.pc += 3
+
+            elif ir == 71:
+                operand_a = self.ram_read(self.pc + 1)
+                self.prn(operand_a)
+                self.pc += 2
+
+            elif ir == 1:
+                running = False
+                self.pc += 1
+
+            else:
+                print(f'unknown')
+                
+
