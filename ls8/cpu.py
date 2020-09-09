@@ -10,6 +10,12 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        self.branchtable = {}
+        self.branchtable[130] = self.ldi
+        self.branchtable[71] = self.prn
+        self.branchtable[162] = self.mul
+        self.branchtable[1] = self.hlt
+        self.running = False
 
     def load(self, filename):
         """Load a program into memory."""
@@ -91,46 +97,60 @@ class CPU:
         self.ram[mar] = mdr
         return self.ram[mar]
 
-    def ldi(self, mar, mdr):
-        self.reg[mar] = mdr
+    def hlt(self):
+        self.running = False
 
-    def prn(self, mar):
+    def ldi(self):
+        a = self.ram_read(self.pc + 1)
+        b = self.ram_read(self.pc + 2)
+        self.reg[a] = b
+        self.pc += 3
+
+    def prn(self):
+        mar = self.ram_read(self.pc + 1)
         print(self.reg[mar])
+        self.pc += 2
 
-    def mul(self, a1, a2):
-        self.alu('MUL', a1, a2)
+    def mul(self):
+        a = self.ram_read(self.pc + 1)
+        b = self.ram_read(self.pc + 2)
+        self.alu('MUL', a, b)
+        self.pc += 3
 
     def run(self):
         """Run the CPU."""
-        running = True
-        HLT = 0b00000001
+        self.running = True
 
-
-        while running:
+        while self.running:
             ir = self.ram_read(self.pc)
+            self.branchtable[ir]()
 
-            if ir == 162:
-                operand_a = self.ram_read(self.pc + 1)
-                operand_b = self.ram_read(self.pc + 2)
-                self.mul(operand_a, operand_b)
-                self.pc += 3
 
-            elif ir == 130:
-                operand_a = self.ram_read(self.pc + 1)
-                operand_b = self.ram_read(self.pc + 2)
-                self.ldi(operand_a, operand_b)
-                self.pc += 3
+        # while running:
+        #     ir = self.ram_read(self.pc)
 
-            elif ir == 71:
-                operand_a = self.ram_read(self.pc + 1)
-                self.prn(operand_a)
-                self.pc += 2
+        #     if ir == 162:
+        #         operand_a = self.ram_read(self.pc + 1)
+        #         operand_b = self.ram_read(self.pc + 2)
+        #         self.mul(operand_a, operand_b)
+        #         self.pc += 3
 
-            elif ir == HLT:
-                running = False
-                self.pc += 1
+        #     elif ir == 130:
+        #         operand_a = self.ram_read(self.pc + 1)
+        #         operand_b = self.ram_read(self.pc + 2)
+        #         self.ldi(operand_a, operand_b)
+        #         self.pc += 3
 
-            else:
-                print(f'unknown')
+        #     elif ir == 71:
+        #         operand_a = self.ram_read(self.pc + 1)
+        #         self.prn(operand_a)
+        #         self.pc += 2
+
+        #     elif ir == HLT:
+        #         running = False
+        #         self.pc += 1
+
+        #     else:
+        #         print(f'unknown')
                 
 
