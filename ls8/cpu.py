@@ -15,7 +15,13 @@ class CPU:
         self.branchtable[71] = self.prn
         self.branchtable[162] = self.mul
         self.branchtable[1] = self.hlt
+        self.branchtable[69] = self.push
+        self.branchtable[70] = self.pop
+        self.branchtable[80] = self.call
+        self.branchtable[17] = self.ret
+        self.branchtable[160] = self.add
         self.running = False
+        self.sp = 7
 
     def load(self, filename):
         """Load a program into memory."""
@@ -56,8 +62,10 @@ class CPU:
             sys.exit(2)
 
 
-    def alu(self, op, reg_a, reg_b):
+    def alu(self, op):
         """ALU operations."""
+        reg_a = self.pc + 1
+        reg_b = self.pc + 2
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
@@ -100,10 +108,38 @@ class CPU:
     def hlt(self):
         self.running = False
 
+    def push(self):
+        given_register = self.ram[self.pc + 1]
+        value_in_register = self.reg[given_register]
+        self.reg[self.sp] -= 1
+        self.ram[self.reg[self.sp]] = value_in_register
+        self.pc += 2 
+
+    def pop(self):
+        given_register = self.ram[self.pc + 1]
+        value_from_memory = self.ram[self.reg[self.sp]]
+        self.reg[given_register] = value_from_memory
+        self.reg[self.sp] += 1
+        self.pc += 2
+
+    def call(self):
+        given_register = self.ram[self.pc + 1]
+        print(f'given_register: {given_register}')
+        self.reg[self.sp] -= 1
+        print(f'self.reg[self.pc]: {self.reg[self.pc]}')
+        self.ram[self.reg[self.sp]] = self.pc + 2
+        print(f'self.ram[self.reg[self.pc]]: {self.ram[self.reg[self.pc]]}')
+        print(f'self.ram: {self.ram}')
+        self.pc = self.reg[given_register]
+
+    def ret(self):
+        self.pc = self.ram[self.reg[self.sp]]
+        self.reg[self.sp] += 1
+
     def ldi(self):
-        a = self.ram_read(self.pc + 1)
-        b = self.ram_read(self.pc + 2)
-        self.reg[a] = b
+        mar = self.ram_read(self.pc + 1)
+        mdr = self.ram_read(self.pc + 2)
+        self.reg[mar] = mdr
         self.pc += 3
 
     def prn(self):
@@ -117,40 +153,20 @@ class CPU:
         self.alu('MUL', a, b)
         self.pc += 3
 
+    def add(self):
+        self.alu('ADD')
+
     def run(self):
         """Run the CPU."""
         self.running = True
 
+        self.reg[self.sp] = len(self.ram)
+        
+        print(self.ram)
+
         while self.running:
+            print(f'reg: {self.reg}')
+            print(f'pc: {self.pc}')
             ir = self.ram_read(self.pc)
+            print(f'ir: {ir}')
             self.branchtable[ir]()
-
-
-        # while running:
-        #     ir = self.ram_read(self.pc)
-
-        #     if ir == 162:
-        #         operand_a = self.ram_read(self.pc + 1)
-        #         operand_b = self.ram_read(self.pc + 2)
-        #         self.mul(operand_a, operand_b)
-        #         self.pc += 3
-
-        #     elif ir == 130:
-        #         operand_a = self.ram_read(self.pc + 1)
-        #         operand_b = self.ram_read(self.pc + 2)
-        #         self.ldi(operand_a, operand_b)
-        #         self.pc += 3
-
-        #     elif ir == 71:
-        #         operand_a = self.ram_read(self.pc + 1)
-        #         self.prn(operand_a)
-        #         self.pc += 2
-
-        #     elif ir == HLT:
-        #         running = False
-        #         self.pc += 1
-
-        #     else:
-        #         print(f'unknown')
-                
-
