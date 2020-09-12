@@ -10,6 +10,7 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        self.fl = 0b00000000
         self.branchtable = {}
         self.branchtable[130] = self.ldi
         self.branchtable[71] = self.prn
@@ -20,6 +21,10 @@ class CPU:
         self.branchtable[80] = self.call
         self.branchtable[17] = self.ret
         self.branchtable[160] = self.add
+        self.branchtable[167] = self.cmp_f
+        self.branchtable[85] = self.jeq
+        self.branchtable[86] = self.jne
+        self.branchtable[84] = self.jmp
         self.running = False
         self.sp = 7
 
@@ -69,10 +74,18 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-            # self.running = False
         elif op == 'MUL':
             self.reg[reg_a] *= self.reg[reg_b]
-        #elif op == "SUB": etc
+        elif op == "CMP":
+            flag = list('00000000')
+            if reg_a == reg_b:
+                flag[4] = '1'
+            if reg_a < reg_b:
+                flag[5] = '1'
+            if reg_a > reg_b:
+                flag[6] = '1'
+            flag = ''.join(flag)
+            self.flag = int(flag, 2)
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -125,12 +138,8 @@ class CPU:
 
     def call(self):
         given_register = self.ram[self.pc + 1]
-        print(f'given_register: {given_register}')
         self.reg[self.sp] -= 1
-        print(f'self.reg[self.pc]: {self.reg[self.pc]}')
         self.ram[self.reg[self.sp]] = self.pc + 2
-        print(f'self.ram[self.reg[self.pc]]: {self.ram[self.reg[self.pc]]}')
-        print(f'self.ram: {self.ram}')
         self.pc = self.reg[given_register]
 
     def ret(self):
@@ -158,6 +167,21 @@ class CPU:
         self.alu('ADD')
         self.pc += 3
 
+    def cmp_f(self):
+        self.alu('CMP')
+        self.pc += 3
+
+    def jeq(self):
+        flag = list(self.flag)
+        if flag[4] == 1:
+            
+
+    def jne(self):
+        pass
+
+    def jmp(self):
+        pass
+
     def run(self):
         """Run the CPU."""
         self.running = True
@@ -166,9 +190,8 @@ class CPU:
         
         print(self.ram)
 
+        # self.cmp_f()
+
         while self.running:
-            print(f'reg: {self.reg}')
-            print(f'pc: {self.pc}')
             ir = self.ram_read(self.pc)
-            print(f'ir: {ir}')
             self.branchtable[ir]()
