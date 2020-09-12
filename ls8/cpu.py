@@ -85,7 +85,7 @@ class CPU:
             if reg_a > reg_b:
                 flag[6] = '1'
             flag = ''.join(flag)
-            self.flag = int(flag, 2)
+            self.flag = flag
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -173,14 +173,19 @@ class CPU:
 
     def jeq(self):
         flag = list(self.flag)
-        if flag[4] == 1:
-            
+        print(f'176 flag[5]: {flag[5]}')
+        if flag[5] == '1':
+            self.pc = self.ram[self.pc + 1]
+
 
     def jne(self):
-        pass
+        flag = list(str(self.flag))
+        if flag[5] == '0':
+            self.pc = self.ram[self.pc + 1]
 
     def jmp(self):
-        pass
+        given_register = self.ram[self.pc + 1]
+        self.pc = given_register
 
     def run(self):
         """Run the CPU."""
