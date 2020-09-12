@@ -64,11 +64,12 @@ class CPU:
 
     def alu(self, op):
         """ALU operations."""
-        reg_a = self.pc + 1
-        reg_b = self.pc + 2
+        reg_a = self.ram[self.pc + 1]
+        reg_b = self.ram[self.pc + 2]
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+            # self.running = False
         elif op == 'MUL':
             self.reg[reg_a] *= self.reg[reg_b]
         #elif op == "SUB": etc
@@ -155,6 +156,7 @@ class CPU:
 
     def add(self):
         self.alu('ADD')
+        self.pc += 3
 
     def run(self):
         """Run the CPU."""
