@@ -10,7 +10,11 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
-        self.fl = 0b00000000
+        self.fl = {
+            'E': 0,
+            'L': 0,
+            'G': 0
+        }
         self.branchtable = {}
         self.branchtable[130] = self.ldi
         self.branchtable[71] = self.prn
@@ -77,15 +81,16 @@ class CPU:
         elif op == 'MUL':
             self.reg[reg_a] *= self.reg[reg_b]
         elif op == "CMP":
-            flag = list('00000000')
-            if reg_a == reg_b:
-                flag[4] = '1'
-            if reg_a < reg_b:
-                flag[5] = '1'
-            if reg_a > reg_b:
-                flag[6] = '1'
-            flag = ''.join(flag)
-            self.flag = flag
+            if self.reg[reg_a] < self.reg[reg_b]:
+                self.fl['L'] = '1'
+                self.fl['E'] = '0'
+                self.fl['G'] = '0'
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.fl['G'] = '1'
+                self.fl['E'] = '0'
+                self.fl['L'] = '0'
+            elif self.reg[reg_a] == self.reg[reg_b]:
+                self.fl['E'] = '1'
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -172,20 +177,23 @@ class CPU:
         self.pc += 3
 
     def jeq(self):
-        flag = list(self.flag)
-        print(f'176 flag[5]: {flag[5]}')
-        if flag[5] == '1':
-            self.pc = self.ram[self.pc + 1]
+        if self.fl['E'] == '1':
+            given_register = self.ram[self.pc + 1]
+            self.pc = self.reg[given_register]
+        else:
+            self.pc += 2
 
 
     def jne(self):
-        flag = list(str(self.flag))
-        if flag[5] == '0':
-            self.pc = self.ram[self.pc + 1]
+        if self.fl['E'] == '0':
+            given_register = self.ram[self.pc + 1]
+            self.pc = self.reg[given_register]
+        else:
+            self.pc += 2
 
     def jmp(self):
         given_register = self.ram[self.pc + 1]
-        self.pc = given_register
+        self.pc = self.reg[given_register]
 
     def run(self):
         """Run the CPU."""
@@ -193,9 +201,7 @@ class CPU:
 
         self.reg[self.sp] = len(self.ram)
         
-        print(self.ram)
-
-        # self.cmp_f()
+        # print(self.ram)
 
         while self.running:
             ir = self.ram_read(self.pc)
